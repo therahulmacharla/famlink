@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FamLink PWA</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f4f6f9; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: #2c3e50; }
+        button { background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button.login { background: #3498db; }
+        input { padding: 10px; width: 200px; margin-right: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        #map { height: 200px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>FamLink PWA</h1>
+    
+    <div class="card">
+        <h2>Phone Login</h2>
+        <input type="tel" id="phone" placeholder="+1 234 567 8900">
+        <button class="login" onclick="alert('Login code sent!')">Login with Phone</button>
+    </div>
+
+    <div class="card">
+        <h2>Mobile Safety Check</h2>
+        <p>Status: <strong style="color: green;">Safe</strong></p>
+        <button onclick="alert('Safety status updated!')">Check In Now</button>
+    </div>
+
+    <div class="card">
+        <h2>SOS Emergency Simulation</h2>
+        <button onclick="alert('SOS Alert Triggered! Emergency contacts notified.')">TRIGGER SOS EMERGENCY</button>
+    </div>
+
+    <div class="card">
+        <h2>Live Map View</h2>
+        <div id="map">Interactive Live Map View (Simulated)</div>
+    </div>
+</body>
+</html>
