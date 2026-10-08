@@ -1,42 +1,155 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FamLink PWA</title>
-    <style>
-        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f4f6f9; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h1 { color: #2c3e50; }
-        button { background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        button.login { background: #3498db; }
-        input { padding: 10px; width: 200px; margin-right: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        #map { height: 200px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: #666; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FamLink PWA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 </head>
-<body>
-    <h1>FamLink PWA</h1>
-    
-    <div class="card">
-        <h2>Phone Login</h2>
-        <input type="tel" id="phone" placeholder="+1 234 567 8900">
-        <button class="login" onclick="alert('Login code sent!')">Login with Phone</button>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col font-sans">
+  <header class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center shadow-lg">
+    <div class="flex items-center space-x-2">
+      <span class="text-2xl font-bold text-indigo-500">FamLink</span>
+      <span class="text-xs bg-indigo-900 text-indigo-300 px-2 py-0.5 rounded-full">PWA</span>
     </div>
+    <div id="auth-status" class="text-sm text-gray-400"></div>
+  </header>
 
-    <div class="card">
-        <h2>Mobile Safety Check</h2>
-        <p>Status: <strong style="color: green;">Safe</strong></p>
-        <button onclick="alert('Safety status updated!')">Check In Now</button>
-    </div>
+  <main class="flex-1 max-w-4xl w-full mx-auto p-4 space-y-6">
+    <section id="login-section" class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow flex flex-col space-y-4">
+      <h2 class="text-xl font-semibold text-gray-200">Phone Login Simulation</h2>
+      <div class="flex space-x-2">
+        <input id="phone-input" type="tel" placeholder="Enter Phone (+91...)" class="flex-1 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500" />
+        <button id="login-btn" onclick="handleLogin()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded font-medium transition">Login</button>
+        <button id="logout-btn" onclick="handleLogout()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded font-medium transition hidden">Logout</button>
+      </div>
+      <p id="user-display" class="text-sm text-green-400 hidden"></p>
+    </section>
 
-    <div class="card">
-        <h2>SOS Emergency Simulation</h2>
-        <button onclick="alert('SOS Alert Triggered! Emergency contacts notified.')">TRIGGER SOS EMERGENCY</button>
-    </div>
+    <section class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow space-y-4">
+      <h2 class="text-xl font-semibold text-gray-200">Are You Safe? Status Check-in</h2>
+      <div class="flex space-x-4">
+        <button onclick="setStatus('Safe', 'bg-green-600')" class="flex-1 bg-green-700 hover:bg-green-600 py-3 rounded-lg font-bold text-center transition">I'm Safe</button>
+        <button onclick="setStatus('Need Help', 'bg-yellow-600')" class="flex-1 bg-yellow-700 hover:bg-yellow-600 py-3 rounded-lg font-bold text-center transition">Need Help</button>
+        <button onclick="setStatus('In Danger', 'bg-red-700')" class="flex-1 bg-red-800 hover:bg-red-700 py-3 rounded-lg font-bold text-center transition">In Danger</button>
+      </div>
+      <div class="mt-2 text-center">
+        Current Status: <span id="current-status" class="px-3 py-1 rounded text-sm font-semibold bg-gray-700 text-gray-300">Not Set</span>
+      </div>
+    </section>
 
-    <div class="card">
-        <h2>Live Map View</h2>
-        <div id="map">Interactive Live Map View (Simulated)</div>
-    </div>
+    <section class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-200">Live Location & Emergency SOS</h2>
+        <button onclick="triggerSOS()" class="bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-lg font-bold shadow animate-pulse">EMERGENCY SOS</button>
+      </div>
+      <div id="sos-alert" class="hidden bg-red-900 border border-red-500 text-red-200 p-3 rounded"></div>
+      <div id="map" class="w-full h-80 rounded-lg border border-gray-700"></div>
+    </section>
+
+    <section class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow flex justify-between items-center">
+      <div>
+        <h3 class="font-semibold text-gray-300">Device Battery Status</h3>
+        <p id="battery-info" class="text-sm text-gray-400">Fetching battery info...</p>
+      </div>
+      <div id="battery-level" class="text-2xl font-bold text-indigo-400">--%</div>
+    </section>
+  </main>
+
+  <script>
+    const userPhone = localStorage.getItem('famlink_phone');
+    if (userPhone) {
+      document.getElementById('phone-input').value = userPhone;
+      document.getElementById('user-display').innerText = 'Logged in as: ' + userPhone;
+      document.getElementById('user-display').classList.remove('hidden');
+      document.getElementById('logout-btn').classList.remove('hidden');
+      document.getElementById('login-btn').classList.add('hidden');
+    }
+
+    function handleLogin() {
+      const val = document.getElementById('phone-input').value;
+      if (val) {
+        localStorage.setItem('famlink_phone', val);
+        document.getElementById('user-display').innerText = 'Logged in as: ' + val;
+        document.getElementById('user-display').classList.remove('hidden');
+        document.getElementById('logout-btn').classList.remove('hidden');
+        document.getElementById('login-btn').classList.add('hidden');
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('famlink_phone');
+      document.getElementById('phone-input').value = '';
+      document.getElementById('user-display').classList.add('hidden');
+      document.getElementById('logout-btn').classList.add('hidden');
+      document.getElementById('login-btn').classList.remove('hidden');
+    }
+
+    function setStatus(status, bgClass) {
+      const el = document.getElementById('current-status');
+      el.innerText = status;
+      el.className = 'px-3 py-1 rounded text-sm font-semibold text-white ' + bgClass;
+    }
+
+    const defaultLat = 17.4411;
+    const defaultLng = 78.4917;
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://demotiles.maplibre.org/style.json',
+      center: [defaultLng, defaultLat],
+      zoom: 12
+    });
+
+    let marker = new maplibregl.Marker({ color: '#6366f1' })
+      .setLngLat([defaultLng, defaultLat])
+      .setPopup(new maplibregl.Popup().setHTML('<b>Default Location</b><br>Secunderabad / Hyderabad'))
+      .addTo(map);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const { latitude, longitude } = pos.coords;
+        map.setCenter([longitude, latitude]);
+        marker.setLngLat([longitude, latitude]).setPopup(new maplibregl.Popup().setHTML('<b>Your Location</b>')).addTo(map);
+      }, err => console.log('Geolocation error:', err));
+    }
+
+    function triggerSOS() {
+      const alertBox = document.getElementById('sos-alert');
+      alertBox.classList.remove('hidden');
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          alertBox.innerText = `🚨 SOS Triggered! Location sent: Lat ${pos.coords.latitude.toFixed(4)}, Lng ${pos.coords.longitude.toFixed(4)}`;
+        }, () => {
+          alertBox.innerText = `🚨 SOS Triggered! Location: Secunderabad (${defaultLat}, ${defaultLng})`;
+        });
+      } else {
+        alertBox.innerText = `🚨 SOS Triggered! Location: Secunderabad (${defaultLat}, ${defaultLng})`;
+      }
+    }
+
+    if ('getBattery' in navigator) {
+      navigator.getBattery().then(battery => {
+        function updateBattery() {
+          const level = Math.round(battery.level * 100);
+          document.getElementById('battery-level').innerText = level + '%';
+          document.getElementById('battery-info').innerText = (battery.charging ? 'Charging' : 'Discharging') + ` (${level}%)`;
+        }
+        updateBattery();
+        battery.addEventListener('levelchange', updateBattery);
+        battery.addEventListener('chargingchange', updateBattery);
+      });
+    } else {
+      document.getElementById('battery-info').innerText = 'Battery API not supported on this browser';
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration skipped or failed:', err));
+      });
+    }
+  </script>
 </body>
 </html>
